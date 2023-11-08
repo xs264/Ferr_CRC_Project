@@ -1,0 +1,78 @@
+---
+title: "Barplot metabolites"
+author: "Snow Yan"
+date: "4/21/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+setwd("D:/Snow/Data analysis R/GEO data analysis/GEO data analysis/metabolomics model")
+data<-read.csv("vimpCI_male_all.csv",stringsAsFactors = T, header = T)
+colnames(data)[1]<-'gene'
+data<-as.data.frame.matrix(data)
+
+library(dplyr)
+target<-c("Lactate","Alanine","Citrulline","Threonine","Lipoxin B4","Histidine","CDP choline","Vitamin E", "Carnitine","Prostaglandin F2a","PE (34:1)","Stearic acid","Diacetylspermine")
+genes <- filter(data, gene%in%target)
+
+data1<-read.csv("vimpCI_female_all.csv",stringsAsFactors = T, header = T)
+colnames(data1)[1]<-'gene'
+data1<-as.data.frame.matrix(data1)
+genes1 <- filter(data1, gene%in%target)
+
+gene<-merge(genes,genes1,by="gene")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+library(ggplot2)
+p1<-genes %>%
+  arrange(-log10(pvalue)) %>%    # First sort by val. This sort the dataframe but NOT the factor levels
+  mutate(name=factor(gene, levels=gene)) %>%   # This trick update the factor levels
+  ggplot( aes(x=gene, y=-log10(pvalue))) +
+  geom_segment( aes(xend=gene, yend=0)) +
+  geom_point( size=4, color="#A37AC0") +
+  coord_flip() +
+  theme_bw() +
+  xlab("Metabolites")+ylab("Permutation -log10(P value)")+theme(text = element_text(size = 16))+ggtitle("Male")+
+  geom_hline(yintercept=1.30103, linetype="dashed", color = "red", size=1.5)
+
+p2<-genes1 %>%
+  arrange(-log10(pvalue)) %>%    # First sort by val. This sort the dataframe but NOT the factor levels
+  mutate(name=factor(gene, levels=gene)) %>%   # This trick update the factor levels
+  ggplot( aes(x=gene, y=-log10(pvalue))) +
+  geom_segment( aes(xend=gene, yend=0)) +
+  geom_point( size=4, color="#ABC4EE") +
+  coord_flip() +
+  theme_bw() +
+  xlab("Metabolites")+ylab("Permutation -log10(P value)")+theme(text = element_text(size = 16))+ggtitle("Female")+
+  geom_hline(yintercept=1.30103, linetype="dashed", color = "red", size=1.5)
+
+library(ggpubr)
+p<-ggarrange(p1,p2,#labels = c("A", "B","C","D"),
+             nrow=1, ncol=2,common.legend = TRUE, legend = "bottom")
+
+ggsave(
+  filename = ("barplot metabolites.jpg"),
+  plot = p,
+  width = 12,
+  height = 6,
+  dpi=600,
+  device = "jpg"
+)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
